@@ -59,11 +59,18 @@ jobs:
         echo "=== Available schemes ==="
         xcodebuild -list -workspace App.xcworkspace
         
+    - name: Configure code signing
+      run: |
+        cd ios/App
+        echo "=== Configuring code signing ==="
+        # Use xcodebuild to configure automatic signing
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" build -dry-run
+        
     - name: Test build without archive
       run: |
         cd ios/App
         echo "=== Testing build without archive ==="
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS build -verbose 2>&1 | tee test-build.log
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" build -verbose 2>&1 | tee test-build.log
         if [ $? -eq 0 ]; then
           echo "✅ Build successful without archive"
         else
@@ -76,7 +83,7 @@ jobs:
         cd ios/App
         echo "=== Building iOS app (Debug) ==="
         set -e
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive archive -verbose 2>&1 | tee build.log
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" archive -verbose 2>&1 | tee build.log
         if [ $? -ne 0 ]; then
           echo "=== Build failed, showing logs ==="
           cat build.log
