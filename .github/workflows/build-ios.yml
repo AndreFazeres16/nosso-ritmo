@@ -1,0 +1,83 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Permite executar manualmente
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+        
+    - name: Build web assets
+      run: npm run build
+        
+    - name: Install Capacitor CLI
+      run: npm install -g @capacitor/cli
+        
+    - name: Sync iOS platform
+      run: npx cap sync ios
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Install CocoaPods
+      run: |
+        cd ios/App
+        sudo gem install cocoapods
+        pod install
+        
+    - name: List available schemes
+      run: |
+        cd ios/App
+        xcodebuild -list -workspace App.xcworkspace
+        
+    - name: Build iOS app
+      run: |
+        cd ios/App
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination generic/platform=iOS -archivePath App.xcarchive archive
+        
+    - name: Export IPA
+      run: |
+        cd ios/App
+        xcodebuild -exportArchive -archivePath App.xcarchive -exportPath ./build -exportOptionsPlist exportOptions.plist
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-${{ github.run_number }}
+        path: ios/App/build/
+        retention-days: 30
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ios/App/build/*.ipa
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          iOS Build v${{ github.run_number }}
+          
+          - Build Date: ${{ github.event.head_commit.timestamp }}
+          - Commit: ${{ github.sha }}
+          - Branch: ${{ github.ref_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
