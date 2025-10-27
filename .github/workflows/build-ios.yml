@@ -107,19 +107,3 @@ jobs:
         name: ios-build-${{ github.run_number }}
         path: ios/App/build/
         retention-days: 30
-        
-    - name: Create Release
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ios/App/build/*.ipa
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
-        body: |
-          iOS Build v${{ github.run_number }}
-          
-          - Build Date: ${{ github.event.head_commit.timestamp }}
-          - Commit: ${{ github.sha }}
-          - Branch: ${{ github.ref_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
