@@ -59,31 +59,13 @@ jobs:
         echo "=== Available schemes ==="
         xcodebuild -list -workspace App.xcworkspace
         
-    - name: Configure code signing
+    - name: Build iOS app (Legacy Build System)
       run: |
         cd ios/App
-        echo "=== Configuring code signing ==="
-        # Use xcodebuild to configure automatic signing
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" build -dry-run
-        
-    - name: Test build without archive
-      run: |
-        cd ios/App
-        echo "=== Testing build without archive ==="
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" build -verbose 2>&1 | tee test-build.log
-        if [ $? -eq 0 ]; then
-          echo "✅ Build successful without archive"
-        else
-          echo "❌ Build failed without archive"
-          cat test-build.log
-        fi
-        
-    - name: Build iOS app
-      run: |
-        cd ios/App
-        echo "=== Building iOS app (Debug) ==="
+        echo "=== Building iOS app with Legacy Build System ==="
         set -e
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="iPhone Developer" archive -verbose 2>&1 | tee build.log
+        # Use legacy build system to avoid signing issues
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive -UseModernBuildSystem=NO CODE_SIGNING_ALLOWED=NO archive -verbose 2>&1 | tee build.log
         if [ $? -ne 0 ]; then
           echo "=== Build failed, showing logs ==="
           cat build.log
@@ -103,11 +85,21 @@ jobs:
           exit 1
         fi
         
-    - name: Export IPA
+    - name: Export IPA (No Signing)
       run: |
         cd ios/App
-        echo "=== Exporting IPA ==="
-        xcodebuild -exportArchive -archivePath App.xcarchive -exportPath ./build -exportOptionsPlist exportOptions.plist -verbose
+        echo "=== Exporting IPA without signing ==="
+        # Create a simple IPA without signing
+        mkdir -p build
+        cd App.xcarchive/Products/Applications
+        cp -r App.app ../../../build/
+        cd ../../../build
+        # Create IPA manually
+        mkdir -p Payload
+        mv App.app Payload/
+        zip -r App.ipa Payload/
+        echo "✅ IPA created: App.ipa"
+        ls -la *.ipa
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
