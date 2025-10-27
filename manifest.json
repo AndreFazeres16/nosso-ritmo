@@ -1,0 +1,21 @@
+{
+  "short_name": "Nosso Ritmo",
+  "name": "Nosso Ritmo",
+  "description": "A shared calendar and life management app for couples to organize their tasks, finances, and events together.",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#F6C8D3",
+  "background_color": "#F5F2EF"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Nosso Ritmo",
+  "description": "A shared calendar and life management app for couples to organize their tasks, finances, and events together.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
