@@ -59,47 +59,37 @@ jobs:
         echo "=== Available schemes ==="
         xcodebuild -list -workspace App.xcworkspace
         
-    - name: Build iOS app (Legacy Build System)
+    - name: Build iOS app for Xcode installation
       run: |
         cd ios/App
-        echo "=== Building iOS app with Legacy Build System ==="
+        echo "=== Building iOS app for Xcode installation ==="
         set -e
-        # Use legacy build system to avoid signing issues
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive -UseModernBuildSystem=NO CODE_SIGNING_ALLOWED=NO archive -verbose 2>&1 | tee build.log
+        # Build for device installation via Xcode
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -UseModernBuildSystem=NO CODE_SIGNING_ALLOWED=NO build -verbose 2>&1 | tee build.log
         if [ $? -ne 0 ]; then
           echo "=== Build failed, showing logs ==="
           cat build.log
           exit 1
         fi
         
-    - name: Check if archive was created
+    - name: Package app for Xcode installation
       run: |
         cd ios/App
-        if [ -d "App.xcarchive" ]; then
-          echo "✅ Archive created successfully"
-          ls -la App.xcarchive/
-        else
-          echo "❌ Archive not found"
+        echo "=== Packaging app for Xcode installation ==="
+        # Find the built app
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "App.app" -type d | head -1)
+        if [ -z "$APP_PATH" ]; then
+          echo "❌ App not found in DerivedData"
           echo "=== Build logs ==="
           cat build.log
           exit 1
         fi
         
-    - name: Export IPA (No Signing)
-      run: |
-        cd ios/App
-        echo "=== Exporting IPA without signing ==="
-        # Create a simple IPA without signing
+        echo "✅ Found app at: $APP_PATH"
         mkdir -p build
-        cd App.xcarchive/Products/Applications
-        cp -r App.app ../../../build/
-        cd ../../../build
-        # Create IPA manually
-        mkdir -p Payload
-        mv App.app Payload/
-        zip -r App.ipa Payload/
-        echo "✅ IPA created: App.ipa"
-        ls -la *.ipa
+        cp -r "$APP_PATH" build/
+        echo "✅ App copied to build directory"
+        ls -la build/
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
