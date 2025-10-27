@@ -59,6 +59,18 @@ jobs:
         echo "=== Available schemes ==="
         xcodebuild -list -workspace App.xcworkspace
         
+    - name: Test build without archive
+      run: |
+        cd ios/App
+        echo "=== Testing build without archive ==="
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS build -verbose 2>&1 | tee test-build.log
+        if [ $? -eq 0 ]; then
+          echo "✅ Build successful without archive"
+        else
+          echo "❌ Build failed without archive"
+          cat test-build.log
+        fi
+        
     - name: Build iOS app
       run: |
         cd ios/App
@@ -71,10 +83,24 @@ jobs:
           exit 1
         fi
         
+    - name: Check if archive was created
+      run: |
+        cd ios/App
+        if [ -d "App.xcarchive" ]; then
+          echo "✅ Archive created successfully"
+          ls -la App.xcarchive/
+        else
+          echo "❌ Archive not found"
+          echo "=== Build logs ==="
+          cat build.log
+          exit 1
+        fi
+        
     - name: Export IPA
       run: |
         cd ios/App
-        xcodebuild -exportArchive -archivePath App.xcarchive -exportPath ./build -exportOptionsPlist exportOptions.plist
+        echo "=== Exporting IPA ==="
+        xcodebuild -exportArchive -archivePath App.xcarchive -exportPath ./build -exportOptionsPlist exportOptions.plist -verbose
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
