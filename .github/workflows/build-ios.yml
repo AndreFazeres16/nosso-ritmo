@@ -62,8 +62,14 @@ jobs:
     - name: Build iOS app
       run: |
         cd ios/App
-        echo "=== Building iOS app ==="
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination generic/platform=iOS -archivePath App.xcarchive archive -verbose
+        echo "=== Building iOS app (Debug) ==="
+        set -e
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS -archivePath App.xcarchive archive -verbose 2>&1 | tee build.log
+        if [ $? -ne 0 ]; then
+          echo "=== Build failed, showing logs ==="
+          cat build.log
+          exit 1
+        fi
         
     - name: Export IPA
       run: |
